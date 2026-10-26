@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudHub - مدير المهام والميزانية السحابي</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            overflow-x: hidden;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+        .glass-card {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-300 flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 glass-card border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+            <!-- Brand Logo & Name -->
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
+                    <i class="fa-solid fa-cloud-bolt text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-l from-indigo-600 to-emerald-500 dark:from-indigo-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                            CloudHub
+                        </h1>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-500/20">
+                            v2.5 Cloud
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">مدير المهام والميزانية والملاحظات السحابي</p>
+                </div>
+            </div>
+
+            <!-- Live DB Status & Quick Actions -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <!-- Online DB Connection Badge -->
+                <div id="dbStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all">
+                    <span id="dbStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                    <span id="dbStatusText">جاري الاتصال بقاعدة البيانات...</span>
+                </div>
+
+                <!-- Seed Sample Data Button -->
+                <button id="seedDataBtn" onclick="seedSampleData()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 transition transform active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>إضافة بيانات تجريبية</span>
+                </button>
+
+                <!-- GitHub & DB Setup Guide Modal Button -->
+                <button onclick="openModal('githubModal')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold border border-slate-700 transition">
+                    <i class="fa-brands fa-github text-base"></i>
+                    <span class="hidden sm:inline">إعدادات GitHub & DB</span>
+                </button>
+
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition" title="تغيير المظهر">
+                    <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- User & Cloud Sync Bar -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                    <i class="fa-solid fa-database text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">معرف الجلسة السحابية (User ID):</span>
+                        <code id="userIdDisplay" class="text-xs bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg font-mono text-indigo-600 dark:text-indigo-400 select-all">جاري التوليد...</code>
+                        <button onclick="copyUserId()" class="text-xs text-slate-400 hover:text-indigo-500 transition p-1" title="نسخ المعرف">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        يتم حفظ ومزامنة جميع التعديلات لحظياً على قاعدة بيانات Firestore السحابية بدون الحاجة لإعادة تحميل الصفحة.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Workspace Scope Switcher (Public Link Shared vs Private User) -->
+            <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl w-full md:w-auto justify-center">
+                <button id="scopePublicBtn" onclick="setWorkspaceScope('public')" class="flex-1 md:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>مساحة عامة للرابط</span>
+                </button>
+                <button id="scopePrivateBtn" onclick="setWorkspaceScope('private')" class="flex-1 md:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-indigo-500">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>مساحتي الخاصة</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Summary Cards (3 Columns) -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Card 1: Tasks Progress -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">إنجاز المهام والمشاريع</p>
+                        <h2 class="text-2xl font-extrabold mt-1 flex items-baseline gap-2">
+                            <span id="summaryTasksTotal">0</span>
+                            <span class="text-xs font-normal text-slate-400">مهمة مسجلة</span>
+                        </h2>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-emerald-500"><i class="fa-solid fa-circle-check ml-1"></i>مكتملة: <b id="summaryTasksDone">0</b></span>
+                        <span class="text-amber-500"><i class="fa-solid fa-clock ml-1"></i>قيد التنفيذ: <b id="summaryTasksPending">0</b></span>
+                        <span id="summaryTasksPercent" class="text-indigo-500 font-bold">0%</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div id="summaryTasksBar" class="h-full bg-gradient-to-l from-indigo-500 to-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Net Financial Balance -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">صافي الرصيد المالي السحابي</p>
+                        <h2 id="summaryNetBalance" class="text-2xl font-extrabold mt-1 text-emerald-600 dark:text-emerald-400">
+                            0 ج.م
+                        </h2>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                    <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-2">
+                        <span class="text-slate-400 block">إجمالي الدخل</span>
+                        <span id="summaryTotalIncome" class="font-bold text-emerald-500 text-sm">+0 ج.م</span>
+                    </div>
+                    <div class="bg-rose-500/5 border border-rose-500/20 rounded-xl p-2">
+                        <span class="text-slate-400 block">إجمالي المصروفات</span>
+                        <span id="summaryTotalExpense" class="font-bold text-rose-500 text-sm">-0 ج.م</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Quick Notes & Cloud Stats -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">الملاحظات والروابط المحفوظة</p>
+                        <h2 class="text-2xl font-extrabold mt-1 flex items-baseline gap-2">
+                            <span id="summaryNotesTotal">0</span>
+                            <span class="text-xs font-normal text-slate-400">ملاحظة سحابية</span>
+                        </h2>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-note-sticky"></i>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                    <span class="text-slate-500 dark:text-slate-400">آخر مزامنة فورية:</span>
+                    <span id="lastSyncTime" class="font-bold text-indigo-500">متصل الآن</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Navigation Tabs -->
+        <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <button onclick="switchTab('tasks')" id="tabBtn-tasks" class="tab-btn flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
+                <i class="fa-solid fa-check-double"></i>
+                <span>إدارة المهام والمشاريع</span>
+                <span id="badge-tasks" class="px-2 py-0.5 text-xs rounded-full bg-white/20">0</span>
+            </button>
+            <button onclick="switchTab('budget')" id="tabBtn-budget" class="tab-btn flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>متابعة المصاريف والميزانية</span>
+                <span id="badge-budget" class="px-2 py-0.5 text-xs rounded-full bg-slate-200 dark:bg-slate-800">0</span>
+            </button>
+            <button onclick="switchTab('notes')" id="tabBtn-notes" class="tab-btn flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800">
+                <i class="fa-solid fa-bookmark"></i>
+                <span>ملاحظات وروابط سريعة</span>
+                <span id="badge-notes" class="px-2 py-0.5 text-xs rounded-full bg-slate-200 dark:bg-slate-800">0</span>
+            </button>
+        </div>
+
+        <!-- ==================== TAB 1: TASKS MANAGER ==================== -->
+        <section id="tabContent-tasks" class="space-y-6 animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Add Task Form (4 Cols) -->
+                <div class="lg:col-span-4 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
+                    <h3 class="text-base font-extrabold mb-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>إضافة مهمة جديدة للسحابة</span>
+                    </h3>
+                    <form id="addTaskForm" onsubmit="handleAddTask(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">عنوان المهمة *</label>
+                            <input type="text" id="taskTitle" required placeholder="مثال: رفع المشروع على GitHub..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">الأولوية</label>
+                                <select id="taskPriority" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-indigo-500">
+                                    <option value="عاجل">🔥 عاجل</option>
+                                    <option value="متوسط" selected>⚡ متوسط</option>
+                                    <option value="عادي">🌱 عادي</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">التصنيف</label>
+                                <select id="taskCategory" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-indigo-500">
+                                    <option value="برمجة">💻 برمجة</option>
+                                    <option value="عمل">💼 عمل</option>
+                                    <option value="شخصي">🏠 شخصي</option>
+                                    <option value="مشتريات">🛒 مشتريات</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">تاريخ الاستحقاق (اختياري)</label>
+                            <input type="date" id="taskDueDate" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <button type="submit" id="submitTaskBtn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>حفظ المهمة في قاعدة البيانات</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tasks List & Filters (8 Cols) -->
+                <div class="lg:col-span-8 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <!-- Filter & Search Bar -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                            <button onclick="setTaskFilter('all')" id="taskFilter-all" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm transition">الكل</button>
+                            <button onclick="setTaskFilter('pending')" id="taskFilter-pending" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition">قيد التنفيذ</button>
+                            <button onclick="setTaskFilter('completed')" id="taskFilter-completed" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition">مكتملة</button>
+                        </div>
+
+                        <div class="relative flex-1 sm:max-w-xs">
+                            <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="taskSearchInput" oninput="renderTasks()" placeholder="ابحث في المهام..." class="w-full pr-9 pl-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Tasks Container -->
+                    <div id="tasksListContainer" class="space-y-3 max-h-[500px] overflow-y-auto pl-1">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: EXPENSE & BUDGET TRACKER ==================== -->
+        <section id="tabContent-budget" class="space-y-6 hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Add Transaction Form (4 Cols) -->
+                <div class="lg:col-span-4 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
+                    <h3 class="text-base font-extrabold mb-4 flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>تسجيل معاملة مالية جديدة</span>
+                    </h3>
+                    <form id="addTransactionForm" onsubmit="handleAddTransaction(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">وصف المعاملة *</label>
+                            <input type="text" id="txTitle" required placeholder="مثال: راتب شهري، اشتراك إنترنت..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-emerald-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">نوع العملية</label>
+                                <select id="txType" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-emerald-500 font-bold">
+                                    <option value="expense">🔻 مصروف (-)</option>
+                                    <option value="income">🔼 دخل (+)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">المبلغ (ج.م) *</label>
+                                <input type="number" id="txAmount" required min="1" step="any" placeholder="500" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">الفئة</label>
+                            <select id="txCategory" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-emerald-500">
+                                <option value="راتب / عمل حر">💵 راتب / عمل حر</option>
+                                <option value="طعام ومشروبات">🍔 طعام ومشروبات</option>
+                                <option value="فواتير واشتراكات">⚡ فواتير واشتراكات</option>
+                                <option value="تسوق ومشتريات">🛍️ تسوق ومشتريات</option>
+                                <option value="مواصلات">🚗 مواصلات</option>
+                                <option value="استثمار وادخار">📈 استثمار وادخار</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>حفظ المعاملة المالية</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Budget Breakdown & Transactions List (8 Cols) -->
+                <div class="lg:col-span-8 space-y-5">
+                    <!-- Visual Expense vs Income Ratio Card -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400">مؤشر استهلاك الميزانية (المصروفات إلى الدخل)</span>
+                            <span id="budgetRatioText" class="text-xs font-extrabold text-emerald-500">0% مستهلك</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div id="budgetRatioBar" class="h-full bg-gradient-to-l from-emerald-500 via-amber-500 to-rose-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions List Card -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h4 class="font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-receipt text-indigo-500"></i>
+                                <span>سجل المعاملات المالية السحابي</span>
+                            </h4>
+                            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                                <button onclick="setTxFilter('all')" id="txFilter-all" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm">الكل</button>
+                                <button onclick="setTxFilter('income')" id="txFilter-income" class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-emerald-500">الدخل</button>
+                                <button onclick="setTxFilter('expense')" id="txFilter-expense" class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-rose-500">المصروفات</button>
+                            </div>
+                        </div>
+
+                        <div id="transactionsListContainer" class="space-y-2.5 max-h-[420px] overflow-y-auto pl-1">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: QUICK CLOUD NOTES ==================== -->
+        <section id="tabContent-notes" class="space-y-6 hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Add Note Form (4 Cols) -->
+                <div class="lg:col-span-4 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
+                    <h3 class="text-base font-extrabold mb-4 flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                        <i class="fa-solid fa-feather-pointed"></i>
+                        <span>إضافة ملاحظة أو رابط سحابي</span>
+                    </h3>
+                    <form id="addNoteForm" onsubmit="handleAddNote(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">عنوان الملاحظة *</label>
+                            <input type="text" id="noteTitle" required placeholder="مثال: رابط مستودع GitHub أو فكرة مشروع" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-purple-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">المحتوى أو الرابط *</label>
+                            <textarea id="noteContent" required rows="4" placeholder="اكتب النص أو الكود أو الرابط هنا ليتم حفظه في السحابة..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-purple-500"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-600 dark:text-slate-300">لون البطاقة</label>
+                            <select id="noteColor" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-purple-500">
+                                <option value="indigo">🟣 بنفسجي / إنديجو</option>
+                                <option value="emerald">🟢 أخضر زمردي</option>
+                                <option value="amber">🟠 برتقالي ذهبي</option>
+                                <option value="sky">🔵 أزرق سماوي</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-lg shadow-purple-600/20 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>حفظ الملاحظة في السحابة</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Notes Grid (8 Cols) -->
+                <div class="lg:col-span-8">
+                    <div id="notesGridContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MODAL: GITHUB PAGES & FIREBASE GUIDE ==================== -->
+    <div id="githubModal" class="fixed inset-0 z-50 bg-slate-950/75 glass-card hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center text-xl">
+                        <i class="fa-brands fa-github"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-extrabold">دليل تشغيل البرنامج على GitHub Pages و Online DB</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">كيف ترفع هذا الملف وتشغله برابط مباشر مجاني</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('githubModal')" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                <div class="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2.5">
+                    <i class="fa-solid fa-circle-check text-base mt-0.5"></i>
+                    <div>
+                        هذا البرنامج يعمل الآن بالفعل ومتصل بقاعدة بيانات <b>Firebase Firestore</b> السحابية الحية في هذه الصفحة! يمكنك تجربة إضافة مهام أو الضغط على <b>"إضافة بيانات تجريبية"</b> فوراً.
+                    </div>
+                </div>
+
+                <h4 class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center">1</span>
+                    <span>رفع الكود على GitHub وتشغيل الرابط (GitHub Pages)</span>
+                </h4>
+                <ol class="list-decimal list-inside space-y-1.5 text-xs pr-2">
+                    <li>قم بإنشاء مستودع جديد (New Repository) على حسابك في <b>GitHub</b>.</li>
+                    <li>احفظ كود هذا الملف باسم <code class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-indigo-500 font-mono">index.html</code> وارفعه في المستودع.</li>
+                    <li>ادخل إلى <b>Settings</b> ثم <b>Pages</b> ومن قائمة Branch اختر <b>main</b> واضغط <b>Save</b>.</li>
+                    <li>خلال دقيقة ستحصل على رابط موقعك المباشر مثل: <code class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-emerald-500 font-mono">https://username.github.io/repo-name</code></li>
+                </ol>
+
+                <h4 class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 pt-2">
+                    <span class="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center">2</span>
+                    <span>ربط قاعدة بيانات Firebase الخاصة بك عند الاستضافة الخارجية</span>
+                </h4>
+                <p class="text-xs">
+                    إذا قمت بفتح الملف على استضافتك الخاصة على GitHub، يمكنك إنشاء مشروع مجاني على <a href="https://console.firebase.google.com" target="_blank" class="text-indigo-500 underline font-bold">Firebase Console</a> وتفعيل <b>Firestore Database</b> و <b>Anonymous Auth</b> ثم وضع إعدادات <code class="font-mono text-indigo-400">CUSTOM_FIREBASE_CONFIG</code> داخل الكود في المتغير المخصص لذلك في أسفل الملف.
+                </p>
+            </div>
+
+            <div class="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button onclick="closeModal('githubModal')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">
+                    فهمت، إغلاق النافذة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 dark:border-slate-800 py-4 mt-8 text-center text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p>CloudHub &copy; 2026 — يعمل بواسطة Firebase Firestore السحابية الفورية</p>
+            <p class="flex items-center gap-1.5">
+                <i class="fa-solid fa-bolt text-amber-400"></i>
+                <span>مصمم للعمل كملف واحد على GitHub Pages</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK & Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ============================================================================
+        // 1. إعدادات الاتصال بقاعدة البيانات السحابية (Firebase Configuration)
+        // ملاحظة: عند التشغيل على GitHub Pages الخاص بك، يمكنك وضع إعدادات Firebase هنا:
+        // ============================================================================
+        const CUSTOM_FIREBASE_CONFIG = null; // ضع كائن firebaseConfig الخاص بك هنا إذا رفعته خارجياً
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cloudhub-default-app';
+        let firebaseConfig = null;
+
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else if (CUSTOM_FIREBASE_CONFIG) {
+                firebaseConfig = CUSTOM_FIREBASE_CONFIG;
+            }
+        } catch (err) {
+            console.error("خطأ في قراءة إعدادات Firebase:", err);
+        }
+
+        // Application State (In-Memory synced with Firestore)
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let workspaceScope = 'public'; // 'public' or 'private'
+        let isCloudConnected = false;
+
+        let tasksData = [];
+        let transactionsData = [];
+        let notesData = [];
+
+        let currentTaskFilter = 'all';
+        let currentTxFilter = 'all';
+
+        let unsubTasks = null;
+        let unsubTransactions = null;
+        let unsubNotes = null;
+
+        // ============================================================================
+        // 2. تهيئة المصادقة والاتصال الفوري (RULE 3: Auth Before Queries)
+        // ============================================================================
+        async function initCloudApp() {
+            if (!firebaseConfig) {
+                updateConnectionUI(false, "وضع المعاينة (أضف Firebase Config لـ GitHub)");
+                document.getElementById('userIdDisplay').textContent = "local-session-" + crypto.randomUUID().slice(0, 8);
+                renderAll();
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // RULE 3: Authenticate FIRST before any Firestore query
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        isCloudConnected = true;
+                        document.getElementById('userIdDisplay').textContent = user.uid;
+                        updateConnectionUI(true, "متصل بقاعدة البيانات السحابية (Online DB)");
+                        setupRealtimeListeners();
+                    }
+                });
+            } catch (error) {
+                console.error("خطأ أثناء الاتصال بقاعدة البيانات السحابية:", error);
+                updateConnectionUI(false, "تعذر الاتصال بالسحابة");
+                showToast("حدث خطأ في الاتصال بقاعدة البيانات السحابية", "error");
+            }
+        }
+
+        // ============================================================================
+        // 3. مسارات التخزين السحابي المعتمدة (RULE 1: Strict Firestore Paths)
+        // ============================================================================
+        function getCollectionRef(collectionName) {
+            if (!db || !currentUser) return null;
+            if (workspaceScope === 'public') {
+                return collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+            } else {
+                return collection(db, 'artifacts', appId, 'users', currentUser.uid, collectionName);
+            }
+        }
+
+        function getDocRef(collectionName, docId) {
+            if (!db || !currentUser) return null;
+            if (workspaceScope === 'public') {
+                return doc(db, 'artifacts', appId, 'public', 'data', collectionName, docId);
+            } else {
+                return doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
+            }
+        }
+
+        // ============================================================================
+        // 4. الاستماع الفوري للبيانات (RULE 2: Simple Queries + JS Memory Sort/Filter)
+        // ============================================================================
+        function setupRealtimeListeners() {
+            if (!currentUser || !db) return;
+
+            // Cleanup previous listeners if switching workspace scope
+            if (unsubTasks) unsubTasks();
+            if (unsubTransactions) unsubTransactions();
+            if (unsubNotes) unsubNotes();
+
+            const tasksRef = getCollectionRef('cloudhub_tasks');
+            const txRef = getCollectionRef('cloudhub_transactions');
+            const notesRef = getCollectionRef('cloudhub_notes');
+
+            // 1. Listen to Tasks
+            unsubTasks = onSnapshot(tasksRef, (snapshot) => {
+                tasksData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Sort in JS memory by createdAt descending
+                tasksData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                updateSyncTimestamp();
+                renderAll();
+            }, (error) => {
+                console.error("خطأ في جلب المهام:", error);
+            });
+
+            // 2. Listen to Transactions
+            unsubTransactions = onSnapshot(txRef, (snapshot) => {
+                transactionsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                transactionsData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                updateSyncTimestamp();
+                renderAll();
+            }, (error) => {
+                console.error("خطأ في جلب المعاملات المالية:", error);
+            });
+
+            // 3. Listen to Notes
+            unsubNotes = onSnapshot(notesRef, (snapshot) => {
+                notesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                notesData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                updateSyncTimestamp();
+                renderAll();
+            }, (error) => {
+                console.error("خطأ في جلب الملاحظات:", error);
+            });
+        }
+
+        // ============================================================================
+        // 5. العمليات السحابية (إضافة، تعديل، حذف، وبيانات تجريبية)
+        // ============================================================================
+        window.handleAddTask = async function(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('taskTitle');
+            const priorityInput = document.getElementById('taskPriority');
+            const categoryInput = document.getElementById('taskCategory');
+            const dueDateInput = document.getElementById('taskDueDate');
+
+            const newTask = {
+                title: titleInput.value.trim(),
+                priority: priorityInput.value,
+                category: categoryInput.value,
+                dueDate: dueDateInput.value || 'غير محدد',
+                completed: false,
+                createdAt: Date.now(),
+                authorId: currentUser ? currentUser.uid : 'guest'
+            };
+
+            if (!newTask.title) return;
+
+            if (isCloudConnected && currentUser) {
+                try {
+                    await addDoc(getCollectionRef('cloudhub_tasks'), newTask);
+                    showToast("تمت إضافة المهمة ومزامنتها في السحابة بنجاح ✅", "success");
+                } catch (err) {
+                    console.error(err);
+                    showToast("تعذر حفظ المهمة في السحابة", "error");
+                }
+            } else {
+                tasksData.unshift({ id: crypto.randomUUID(), ...newTask });
+                renderAll();
+                showToast("تمت إضافة المهمة محلياً", "info");
+            }
+
+            titleInput.value = '';
+            dueDateInput.value = '';
+        };
+
+        window.toggleTaskStatus = async function(taskId, currentStatus) {
+            if (isCloudConnected && currentUser) {
+                try {
+                    const docRef = getDocRef('cloudhub_tasks', taskId);
+                    await updateDoc(docRef, { completed: !currentStatus });
+                } catch (err) {
+                    console.error(err);
+                    showToast("حدث خطأ أثناء تحديث المهمة", "error");
+                }
+            } else {
+                const task = tasksData.find(t => t.id === taskId);
+                if (task) task.completed = !currentStatus;
+                renderAll();
+            }
+        };
+
+        window.deleteItem = async function(collectionType, itemId) {
+            if (isCloudConnected && currentUser) {
+                try {
+                    const docRef = getDocRef(collectionType, itemId);
+                    await deleteDoc(docRef);
+                    showToast("تم الحذف من قاعدة البيانات السحابية 🗑️", "info");
+                } catch (err) {
+                    console.error(err);
+                    showToast("تعذر الحذف من السحابة", "error");
+                }
+            } else {
+                if (collectionType === 'cloudhub_tasks') tasksData = tasksData.filter(i => i.id !== itemId);
+                if (collectionType === 'cloudhub_transactions') transactionsData = transactionsData.filter(i => i.id !== itemId);
+                if (collectionType === 'cloudhub_notes') notesData = notesData.filter(i => i.id !== itemId);
+                renderAll();
+            }
+        };
+
+        window.handleAddTransaction = async function(e) {
+            e.preventDefault();
+            const titleEl = document.getElementById('txTitle');
+            const typeEl = document.getElementById('txType');
+            const amountEl = document.getElementById('txAmount');
+            const categoryEl = document.getElementById('txCategory');
+
+            const amountVal = parseFloat(amountEl.value);
+            if (!titleEl.value.trim() || isNaN(amountVal) || amountVal <= 0) return;
+
+            const newTx = {
+                title: titleEl.value.trim(),
+                type: typeEl.value,
+                amount: amountVal,
+                category: categoryEl.value,
+                date: new Date().toLocaleDateString('ar-EG'),
+                createdAt: Date.now()
+            };
+
+            if (isCloudConnected && currentUser) {
+                try {
+                    await addDoc(getCollectionRef('cloudhub_transactions'), newTx);
+                    showToast("تم تسجيل العملية المالية في السحابة 💰", "success");
+                } catch (err) {
+                    console.error(err);
+                    showToast("تعذر حفظ العملية المالية", "error");
+                }
+            } else {
+                transactionsData.unshift({ id: crypto.randomUUID(), ...newTx });
+                renderAll();
+            }
+
+            titleEl.value = '';
+            amountEl.value = '';
+        };
+
+        window.handleAddNote = async function(e) {
+            e.preventDefault();
+            const titleEl = document.getElementById('noteTitle');
+            const contentEl = document.getElementById('noteContent');
+            const colorEl = document.getElementById('noteColor');
+
+            if (!titleEl.value.trim() || !contentEl.value.trim()) return;
+
+            const newNote = {
+                title: titleEl.value.trim(),
+                content: contentEl.value.trim(),
+                color: colorEl.value,
+                date: new Date().toLocaleDateString('ar-EG'),
+                createdAt: Date.now()
+            };
+
+            if (isCloudConnected && currentUser) {
+                try {
+                    await addDoc(getCollectionRef('cloudhub_notes'), newNote);
+                    showToast("تم حفظ الملاحظة السحابية بنجاح 📌", "success");
+                } catch (err) {
+                    console.error(err);
+                    showToast("تعذر حفظ الملاحظة", "error");
+                }
+            } else {
+                notesData.unshift({ id: crypto.randomUUID(), ...newNote });
+                renderAll();
+            }
+
+            titleEl.value = '';
+            contentEl.value = '';
+        };
+
+        // Seed Sample Data into Cloud DB
+        window.seedSampleData = async function() {
+            const btn = document.getElementById('seedDataBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الرفع للسحابة...</span>';
+
+            const sampleTasks = [
+                { title: "رفع ملف index.html على مستودع GitHub Pages", priority: "عاجل", category: "برمجة", dueDate: "2026-10-28", completed: true, createdAt: Date.now() - 300000 },
+                { title: "مراجعة خطة الميزانية الشهرية وتكاليف الاستضافة", priority: "متوسط", category: "عمل", dueDate: "2026-10-30", completed: false, createdAt: Date.now() - 200000 },
+                { title: "تجهيز واجهة المستخدم المتجاوبة للموبايل", priority: "عاجل", category: "برمجة", dueDate: "2026-11-02", completed: false, createdAt: Date.now() - 100000 }
+            ];
+
+            const sampleTx = [
+                { title: "دفعة مشروع تطوير موقع ويب", type: "income", amount: 18500, category: "راتب / عمل حر", date: new Date().toLocaleDateString('ar-EG'), createdAt: Date.now() - 400000 },
+                { title: "اشتراك الإنترنت والخدمات السحابية", type: "expense", amount: 950, category: "فواتير واشتراكات", date: new Date().toLocaleDateString('ar-EG'), createdAt: Date.now() - 250000 },
+                { title: "مشتريات ومستلزمات المكتب", type: "expense", amount: 2300, category: "تسوق ومشتريات", date: new Date().toLocaleDateString('ar-EG'), createdAt: Date.now() - 120000 }
+            ];
+
+            const sampleNotes = [
+                { title: "أمر رفع التعديلات على GitHub", content: "git add . && git commit -m 'Deploy CloudHub App' && git push origin main", color: "indigo", date: new Date().toLocaleDateString('ar-EG'), createdAt: Date.now() - 150000 },
+                { title: "رابط لوحة تحكم Firebase", content: "https://console.firebase.google.com/ - لمتابعة البيانات الحية في Firestore", color: "emerald", date: new Date().toLocaleDateString('ar-EG'), createdAt: Date.now() - 80000 }
+            ];
+
+            try {
+                if (isCloudConnected && currentUser) {
+                    for (const t of sampleTasks) await addDoc(getCollectionRef('cloudhub_tasks'), t);
+                    for (const tx of sampleTx) await addDoc(getCollectionRef('cloudhub_transactions'), tx);
+                    for (const n of sampleNotes) await addDoc(getCollectionRef('cloudhub_notes'), n);
+                    showToast("تمت إضافة البيانات التجريبية في قاعدة البيانات السحابية بنجاح! 🎉", "success");
+                } else {
+                    sampleTasks.forEach(t => tasksData.unshift({ id: crypto.randomUUID(), ...t }));
+                    sampleTx.forEach(tx => transactionsData.unshift({ id: crypto.randomUUID(), ...tx }));
+                    sampleNotes.forEach(n => notesData.unshift({ id: crypto.randomUUID(), ...n }));
+                    renderAll();
+                    showToast("تمت إضافة البيانات التجريبية بنجاح!", "success");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("حدث خطأ أثناء إضافة البيانات التجريبية", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>إضافة بيانات تجريبية</span>';
+            }
+        };
+
+        // ============================================================================
+        // 6. تحديث واجهة المستخدم والرسوم البيانية (UI Rendering)
+        // ============================================================================
+        function renderAll() {
+            renderSummaryCards();
+            renderTasks();
+            renderTransactions();
+            renderNotes();
+        }
+
+        function renderSummaryCards() {
+            // Tasks Summary
+            const totalTasks = tasksData.length;
+            const doneTasks = tasksData.filter(t => t.completed).length;
+            const pendingTasks = totalTasks - doneTasks;
+            const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+            document.getElementById('summaryTasksTotal').textContent = totalTasks;
+            document.getElementById('summaryTasksDone').textContent = doneTasks;
+            document.getElementById('summaryTasksPending').textContent = pendingTasks;
+            document.getElementById('summaryTasksPercent').textContent = `${pct}%`;
+            document.getElementById('summaryTasksBar').style.width = `${pct}%`;
+            document.getElementById('badge-tasks').textContent = totalTasks;
+
+            // Financial Summary
+            let totalIncome = 0;
+            let totalExpense = 0;
+            transactionsData.forEach(tx => {
+                if (tx.type === 'income') totalIncome += Number(tx.amount) || 0;
+                else totalExpense += Number(tx.amount) || 0;
+            });
+            const netBalance = totalIncome - totalExpense;
+
+            document.getElementById('summaryNetBalance').textContent = `${netBalance.toLocaleString('ar-EG')} ج.م`;
+            document.getElementById('summaryTotalIncome').textContent = `+${totalIncome.toLocaleString('ar-EG')} ج.م`;
+            document.getElementById('summaryTotalExpense').textContent = `-${totalExpense.toLocaleString('ar-EG')} ج.م`;
+            document.getElementById('badge-budget').textContent = transactionsData.length;
+
+            const expenseRatio = totalIncome > 0 ? Math.min(100, Math.round((totalExpense / totalIncome) * 100)) : (totalExpense > 0 ? 100 : 0);
+            document.getElementById('budgetRatioText').textContent = `${expenseRatio}% مستهلك من الدخل`;
+            document.getElementById('budgetRatioBar').style.width = `${expenseRatio}%`;
+
+            // Notes Summary
+            document.getElementById('summaryNotesTotal').textContent = notesData.length;
+            document.getElementById('badge-notes').textContent = notesData.length;
+        }
+
+        window.renderTasks = function() {
+            const container = document.getElementById('tasksListContainer');
+            const searchQuery = (document.getElementById('taskSearchInput')?.value || '').trim().toLowerCase();
+
+            const filtered = tasksData.filter(task => {
+                if (currentTaskFilter === 'pending' && task.completed) return false;
+                if (currentTaskFilter === 'completed' && !task.completed) return false;
+                if (searchQuery && !task.title.toLowerCase().includes(searchQuery) && !task.category.toLowerCase().includes(searchQuery)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400">
+                        <i class="fa-solid fa-cloud-sun text-3xl mb-2 text-indigo-400"></i>
+                        <p class="text-sm font-bold text-slate-600 dark:text-slate-300">لا توجد مهام مطابقة حالياً</p>
+                        <p class="text-xs mt-1">أضف مهمة جديدة من النموذج الجانبي أو اضغط على "إضافة بيانات تجريبية" بالأعلى.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(task => {
+                const priorityStyles = {
+                    'عاجل': 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+                    'متوسط': 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+                    'عادي': 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                }[task.priority] || 'bg-slate-500/10 text-slate-500';
+
+                return `
+                    <div class="group flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800 hover:border-indigo-500/40 transition">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <button onclick="toggleTaskStatus('${task.id}', ${task.completed})" class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition flex-shrink-0 ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-indigo-500'}">
+                                ${task.completed ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                            </button>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-bold truncate ${task.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'}">${escapeHtml(task.title)}</p>
+                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    <span class="text-[11px] px-2 py-0.5 rounded-md border font-semibold ${priorityStyles}">${escapeHtml(task.priority)}</span>
+                                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 font-semibold">${escapeHtml(task.category)}</span>
+                                    <span class="text-[11px] text-slate-400"><i class="fa-regular fa-calendar ml-1"></i>${escapeHtml(task.dueDate || 'غير محدد')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="deleteItem('cloudhub_tasks', '${task.id}')" class="w-8 h-8 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition flex items-center justify-center flex-shrink-0" title="حذف المهمة">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        function renderTransactions() {
+            const container = document.getElementById('transactionsListContainer');
+            const filtered = transactionsData.filter(tx => {
+                if (currentTxFilter === 'income' && tx.type !== 'income') return false;
+                if (currentTxFilter === 'expense' && tx.type !== 'expense') return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400">
+                        <i class="fa-solid fa-Scale-balanced text-2xl mb-2 text-emerald-400"></i>
+                        <p class="text-sm font-bold text-slate-600 dark:text-slate-300">لا توجد معاملات مالية مسجلة</p>
+                        <p class="text-xs mt-1">سجّل دخلك أو مصروفاتك لمتابعة الرصيد السحابي لحظياً.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(tx => {
+                const isIncome = tx.type === 'income';
+                return `
+                    <div class="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}">
+                                <i class="fa-solid ${isIncome ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-slate-100">${escapeHtml(tx.title)}</p>
+                                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                                    <span>${escapeHtml(tx.category)}</span>
+                                    <span>•</span>
+                                    <span>${escapeHtml(tx.date || '')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-extrabold ${isIncome ? 'text-emerald-500' : 'text-rose-500'}">
+                                ${isIncome ? '+' : '-'}${Number(tx.amount).toLocaleString('ar-EG')} ج.م
+                            </span>
+                            <button onclick="deleteItem('cloudhub_transactions', '${tx.id}')" class="w-8 h-8 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition flex items-center justify-center">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderNotes() {
+            const container = document.getElementById('notesGridContainer');
+            if (notesData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 bg-white dark:bg-slate-900">
+                        <i class="fa-regular fa-note-sticky text-3xl mb-2 text-purple-400"></i>
+                        <p class="text-sm font-bold text-slate-600 dark:text-slate-300">لا توجد ملاحظات أو روابط محفوظة</p>
+                        <p class="text-xs mt-1">احفظ الأكواد والروابط المهمة للوصول إليها من أي جهاز.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const borderColors = {
+                indigo: 'border-indigo-500/30 bg-indigo-500/5',
+                emerald: 'border-emerald-500/30 bg-emerald-500/5',
+                amber: 'border-amber-500/30 bg-amber-500/5',
+                sky: 'border-sky-500/30 bg-sky-500/5'
+            };
+
+            container.innerHTML = notesData.map(note => {
+                const styleClass = borderColors[note.color] || borderColors.indigo;
+                return `
+                    <div class="rounded-2xl p-4 border ${styleClass} flex flex-col justify-between gap-3 shadow-sm">
+                        <div>
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <h4 class="font-extrabold text-sm text-slate-800 dark:text-slate-100">${escapeHtml(note.title)}</h4>
+                                <span class="text-[11px] text-slate-400">${escapeHtml(note.date || '')}</span>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-words font-mono bg-white/70 dark:bg-slate-900/70 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800">${escapeHtml(note.content)}</p>
+                        </div>
+                        <div class="flex items-center justify-end gap-2 pt-1">
+                            <button onclick="copyTextToClipboard('${encodeURIComponent(note.content)}')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>نسخ النص</span>
+                            </button>
+                            <button onclick="deleteItem('cloudhub_notes', '${note.id}')" class="p-1.5 px-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-slate-700 transition">
+                                <i class="fa-regular fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============================================================================
+        // 7. دوال التحكم في التبويبات والفلاتر والنسخ والتنبيهات
+        // ============================================================================
+        window.switchTab = function(tabName) {
+            ['tasks', 'budget', 'notes'].forEach(t => {
+                const section = document.getElementById(`tabContent-${t}`);
+                const btn = document.getElementById(`tabBtn-${t}`);
+                if (t === tabName) {
+                    section.classList.remove('hidden');
+                    btn.className = "tab-btn flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition bg-indigo-600 text-white shadow-md shadow-indigo-600/20";
+                } else {
+                    section.classList.add('hidden');
+                    btn.className = "tab-btn flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800";
+                }
+            });
+        };
+
+        window.setTaskFilter = function(filter) {
+            currentTaskFilter = filter;
+            ['all', 'pending', 'completed'].forEach(f => {
+                const el = document.getElementById(`taskFilter-${f}`);
+                if (f === filter) {
+                    el.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm transition";
+                } else {
+                    el.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition";
+                }
+            });
+            renderTasks();
+        };
+
+        window.setTxFilter = function(filter) {
+            currentTxFilter = filter;
+            ['all', 'income', 'expense'].forEach(f => {
+                const el = document.getElementById(`txFilter-${f}`);
+                if (f === filter) {
+                    el.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm";
+                } else {
+                    el.className = "px-2.5 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-indigo-500";
+                }
+            });
+            renderTransactions();
+        };
+
+        window.setWorkspaceScope = function(scope) {
+            workspaceScope = scope;
+            const pubBtn = document.getElementById('scopePublicBtn');
+            const privBtn = document.getElementById('scopePrivateBtn');
+            if (scope === 'public') {
+                pubBtn.className = "flex-1 md:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow";
+                privBtn.className = "flex-1 md:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-indigo-500";
+                showToast("تم التبديل إلى المساحة العامة المشتركة للرابط 🌐", "info");
+            } else {
+                privBtn.className = "flex-1 md:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow";
+                pubBtn.className = "flex-1 md:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-indigo-500";
+                showToast("تم التبديل إلى مساحتك السحابية الخاصة 🔒", "info");
+            }
+            setupRealtimeListeners();
+        };
+
+        function updateConnectionUI(online, text) {
+            const badge = document.getElementById('dbStatusBadge');
+            const dot = document.getElementById('dbStatusDot');
+            const label = document.getElementById('dbStatusText');
+            label.textContent = text;
+            if (online) {
+                badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition-all";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+            } else {
+                badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+            }
+        }
+
+        function updateSyncTimestamp() {
+            const now = new Date().toLocaleTimeString('ar-EG');
+            document.getElementById('lastSyncTime').textContent = now;
+        }
+
+        // Clipboard Helper (iframe compatible via execCommand)
+        window.copyTextToClipboard = function(encodedText) {
+            const text = decodeURIComponent(encodedText);
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast("تم نسخ النص إلى الحافظة بنجاح 📋", "success");
+        };
+
+        window.copyUserId = function() {
+            const uid = document.getElementById('userIdDisplay').textContent;
+            window.copyTextToClipboard(encodeURIComponent(uid));
+        };
+
+        // Modals & Theme
+        window.openModal = function(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeModal = function(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.toggleTheme = function() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            html.classList.toggle('dark');
+            if (html.classList.contains('dark')) {
+                icon.className = "fa-solid fa-sun text-amber-400";
+            } else {
+                icon.className = "fa-solid fa-moon text-indigo-600";
+            }
+        };
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                info: 'bg-slate-800 text-white border border-slate-700'
+            };
+            toast.className = `${colors[type] || colors.info} px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2.5 animate-fade-in pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3200);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Start App on Load
+        window.addEventListener('DOMContentLoaded', initCloudApp);
+    </script>
+</body>
+</html>
